@@ -15,20 +15,6 @@ module cpu_test;
         #10 clk = 1; reset = 0;
         #10 clk = 0; reset = 0;
       end
-      #10 clk = 1; reset = 0;
-      #10 clk = 0; reset = 0;
-      #10 clk = 1; reset = 0;
-      #10 clk = 0; reset = 0;
-      #10 clk = 1; reset = 0;
-      #10 clk = 0; reset = 0;
-      #10 clk = 1; reset = 0;
-      #10 clk = 0; reset = 0;
-      #10 clk = 1; reset = 0;
-      #10 clk = 0; reset = 0;
-      #10 clk = 1; reset = 0;
-      #10 clk = 0; reset = 0;
-      #10 clk = 1; reset = 0;
-      #10 clk = 0; reset = 0;
       #10 $finish;
    end
 
