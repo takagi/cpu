@@ -1,0 +1,18 @@
+#|-*- mode:lisp -*-|#
+(in-package :cl-user)
+(defpackage :lake.user
+  (:use :cl :lake :cl-syntax)
+  (:shadowing-import-from :lake
+                          :directory))
+(in-package :lake.user)
+
+(use-syntax :interpol)
+
+(file "test_cpu" ("cpu.v" "test_cpu.v")
+  (sh "iverilog -o test_cpu cpu.v test_cpu.v"))
+
+(file "test_cpu.vcd" ("test_cpu")
+  (sh "vvp test_cpu"))
+
+(task "show_cpu" ("test_cpu.vcd")
+  (sh "gtkwave test_cpu.vcd 2> /dev/null &"))
