@@ -8,8 +8,8 @@
 
 (use-syntax :interpol)
 
-(file "test_cpu" ("cpu.v" "test_cpu.v")
-  (sh "iverilog -o test_cpu cpu.v test_cpu.v"))
+(file "test_cpu" ("cpu.v" "seg7.v" "test_cpu.v")
+  (sh "iverilog -o test_cpu cpu.v seg7.v test_cpu.v"))
 
 (file "test_cpu.vcd" ("test_cpu")
   (sh "vvp test_cpu"))

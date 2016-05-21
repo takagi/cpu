@@ -1,6 +1,7 @@
-module cpu ( clk, reset );
+module cpu ( clk, reset, o_seg7_0, o_seg7_1, o_seg7_2, o_seg7_3, o_seg7_4, o_seg7_5 );
 
    input clk, reset;
+   output [6:0] o_seg7_0, o_seg7_1, o_seg7_2, o_seg7_3, o_seg7_4, o_seg7_5;
 
    // PC
    reg [7:0] pc, pc1;
@@ -188,6 +189,14 @@ module cpu ( clk, reset );
          ram[ram_addr] <= ram_in;
    end
 
+   // 7 seg
+   seg7 seg7_0 ( ram[8'hf0], o_seg7_0 );
+   seg7 seg7_1 ( ram[8'hf1], o_seg7_1 );
+   seg7 seg7_2 ( ram[8'hf2], o_seg7_2 );
+   seg7 seg7_3 ( ram[8'hf3], o_seg7_3 );
+   seg7 seg7_4 ( ram[8'hf4], o_seg7_4 );
+   seg7 seg7_5 ( ram[8'hf5], o_seg7_5 );
+
    // Reset
    integer i;
    always @(negedge reset) begin
@@ -246,8 +255,20 @@ module cpu ( clk, reset );
       rom[44] <= 15'b100000100000000;  //      ldl reg1 0x00
       rom[45] <= 15'b111000000000000;  //      st  reg0 0x00
       rom[46] <= 15'b110100100000000;  // LD:  ld  reg1 0x00
-      rom[47] <= 15'b111100000000000;  // HLT: hlt
-      for ( i=48; i<256; i++ )
+      rom[47] <= 15'b100000000000001;  // SEG: ldl reg0 0x01
+      rom[48] <= 15'b111000011110000;  //      st  reg0 0xf0
+      rom[49] <= 15'b100000000000010;  //      ldl reg0 0x02
+      rom[50] <= 15'b111000011110001;  //      st  reg0 0xf1
+      rom[51] <= 15'b100000000000011;  //      ldl reg0 0x03
+      rom[52] <= 15'b111000011110010;  //      st  reg0 0xf2
+      rom[53] <= 15'b100000000000100;  //      ldl reg0 0x04
+      rom[54] <= 15'b111000011110011;  //      st  reg0 0xf3
+      rom[55] <= 15'b100000000000101;  //      ldl reg0 0x05
+      rom[56] <= 15'b111000011110100;  //      st  reg0 0xf4
+      rom[57] <= 15'b100000000000110;  //      ldl reg0 0x06
+      rom[58] <= 15'b111000011110101;  //      st  reg0 0xf5
+      rom[59] <= 15'b111100000000000;  // HLT: hlt
+      for ( i=60; i<256; i++ )
         rom[i] <= 0;
       // RAM
       for ( i=0; i<256; i++ )
