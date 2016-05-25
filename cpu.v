@@ -1,6 +1,6 @@
-module cpu ( clk, reset, o_seg7_0, o_seg7_1, o_seg7_2, o_seg7_3, o_seg7_4, o_seg7_5 );
+module cpu ( clk, nreset, o_seg7_0, o_seg7_1, o_seg7_2, o_seg7_3, o_seg7_4, o_seg7_5 );
 
-   input clk, reset;
+   input clk, nreset;
    output [6:0] o_seg7_0, o_seg7_1, o_seg7_2, o_seg7_3, o_seg7_4, o_seg7_5;
 
    // PC
@@ -176,18 +176,95 @@ module cpu ( clk, reset, o_seg7_0, o_seg7_1, o_seg7_2, o_seg7_3, o_seg7_4, o_seg
      endcase
 
    // Write back
-   always @(posedge clk) begin
-      // PC
-      pc <= pc1;
-      // Flag
-      flag_eq <= flag_eq1;
-      // Registers
-      if (reg_we)
-         _reg[reg_idx] <= reg_in;
-      // RAM
-      if (ram_we)
-         ram[ram_addr] <= ram_in;
-   end
+   integer i;
+   always @(posedge clk)
+     if (nreset) begin
+        // PC
+        pc <= pc1;
+        // Flag
+        flag_eq <= flag_eq1;
+        // Registers
+        if (reg_we)
+          _reg[reg_idx] <= reg_in;
+        // RAM
+        if (ram_we)
+          ram[ram_addr] <= ram_in;
+     end
+     else begin                 // Reset
+        // PC
+        pc <= 0;
+        // Flag
+        flag_eq <= 0;
+        // Registers
+        for ( i=0; i<8; i=i+1 )
+          _reg[i] <= 0;
+        // ROM
+        rom[0] <= 15'b100000000000001;   // MOV: ldl reg0 0x01
+        rom[1] <= 15'b100000100000010;   //      ldl reg1 0x02
+        rom[2] <= 15'b000000000100000;   //      mov reg0 reg1
+        rom[3] <= 15'b100000000000001;   // ADD: ldl reg0 0x01
+        rom[4] <= 15'b100000100000010;   //      ldl reg1 0x02
+        rom[5] <= 15'b000100000100000;   //      add reg0 reg1
+        rom[6] <= 15'b100000000000010;   // SUB: ldl reg0 0x02
+        rom[7] <= 15'b100000100000001;   //      ldl reg1 0x01
+        rom[8] <= 15'b001000000100000;   //      sub reg0 reg1
+        rom[9] <= 15'b100000000000011;   // AND: ldl reg0 0x03
+        rom[10] <= 15'b100000100000001;  //      ldl reg1 0x01
+        rom[11] <= 15'b001100000100000;  //      and reg0 reg1
+        rom[12] <= 15'b100000000000001;  // OR:  ldl reg0 0x01
+        rom[13] <= 15'b100000100000010;  //      ldl reg1 0x02
+        rom[14] <= 15'b010000000100000;  //      or  reg0 reg1
+        rom[15] <= 15'b100000000000001;  // SL:  ldl reg0 0x01
+        rom[16] <= 15'b010100000000000;  //      sl
+        rom[17] <= 15'b100000011111111;  // SR:  ldl reg0 0xff
+        rom[18] <= 15'b100100011111111;  //      ldh reg0 0xff
+        rom[19] <= 15'b011000000000000;  //      sr
+        rom[20] <= 15'b100000011111111;  // SRA: ldl reg0 0xff
+        rom[21] <= 15'b100100010000000;  //      ldh reg0 0x80
+        rom[22] <= 15'b011100000000000;  //      sra
+        rom[23] <= 15'b100000011111111;  //      ldl reg0 0xff
+        rom[24] <= 15'b100100000000000;  //      ldh reg0 0x00
+        rom[25] <= 15'b011100000000000;  //      sra
+        rom[26] <= 15'b100000000000001;  // CMP: ldl reg0 0x01
+        rom[27] <= 15'b100000100000001;  //      ldl reg1 0x01
+        rom[28] <= 15'b101000000100000;  //      cmp reg0 reg1
+        rom[29] <= 15'b100000000000001;  //      ldl reg0 0x01
+        rom[30] <= 15'b100000100000010;  //      ldl reg1 0x02
+        rom[31] <= 15'b101000000100000;  //      cmp reg0 reg1
+        rom[32] <= 15'b100000000000001;  // JE:  ldl reg0 0x01
+        rom[33] <= 15'b100000100000001;  //      ldl reg1 0x01
+        rom[34] <= 15'b101000000100000;  //      cmp reg0 reg1
+        rom[35] <= 15'b101100000100101;  //      je  0x25
+        rom[36] <= 15'b000000000000000;  //      mov reg0 reg0
+        rom[37] <= 15'b100000000000001;  //      ldl reg0 0x01
+        rom[38] <= 15'b100000100000010;  //      ldl reg1 0x02
+        rom[39] <= 15'b101000000100000;  //      cmp reg0 reg1
+        rom[40] <= 15'b101100000000000;  //      je  0x00
+        rom[41] <= 15'b110000000101011;  // JMP: jmp 0x2b
+        rom[42] <= 15'b000000000000000;  //      mov reg0 reg0
+        rom[43] <= 15'b100000000000001;  // ST:  ldl reg0 0x01
+        rom[44] <= 15'b100000100000000;  //      ldl reg1 0x00
+        rom[45] <= 15'b111000000000000;  //      st  reg0 0x00
+        rom[46] <= 15'b110100100000000;  // LD:  ld  reg1 0x00
+        rom[47] <= 15'b100000000000001;  // SEG: ldl reg0 0x01
+        rom[48] <= 15'b111000011110000;  //      st  reg0 0xf0
+        rom[49] <= 15'b100000000000010;  //      ldl reg0 0x02
+        rom[50] <= 15'b111000011110001;  //      st  reg0 0xf1
+        rom[51] <= 15'b100000000000011;  //      ldl reg0 0x03
+        rom[52] <= 15'b111000011110010;  //      st  reg0 0xf2
+        rom[53] <= 15'b100000000000100;  //      ldl reg0 0x04
+        rom[54] <= 15'b111000011110011;  //      st  reg0 0xf3
+        rom[55] <= 15'b100000000000101;  //      ldl reg0 0x05
+        rom[56] <= 15'b111000011110100;  //      st  reg0 0xf4
+        rom[57] <= 15'b100000000000110;  //      ldl reg0 0x06
+        rom[58] <= 15'b111000011110101;  //      st  reg0 0xf5
+        rom[59] <= 15'b111100000000000;  // HLT: hlt
+        for ( i=60; i<256; i=i+1 )
+          rom[i] <= 0;
+        // RAM
+        for ( i=0; i<256; i=i+1 )
+          ram[i] <= 0;
+     end
 
    // 7 seg
    seg7 seg7_0 ( ram[8'hf0], o_seg7_0 );
@@ -196,83 +273,5 @@ module cpu ( clk, reset, o_seg7_0, o_seg7_1, o_seg7_2, o_seg7_3, o_seg7_4, o_seg
    seg7 seg7_3 ( ram[8'hf3], o_seg7_3 );
    seg7 seg7_4 ( ram[8'hf4], o_seg7_4 );
    seg7 seg7_5 ( ram[8'hf5], o_seg7_5 );
-
-   // Reset
-   integer i;
-   always @(negedge reset) begin
-      // PC
-      pc <= 0;
-      // Flag
-      flag_eq <= 0;
-      // Registers
-      for ( i=0; i<8; i++ )
-        _reg[i] <= 0;
-      // ROM
-      rom[0] <= 15'b100000000000001;   // MOV: ldl reg0 0x01
-      rom[1] <= 15'b100000100000010;   //      ldl reg1 0x02
-      rom[2] <= 15'b000000000100000;   //      mov reg0 reg1
-      rom[3] <= 15'b100000000000001;   // ADD: ldl reg0 0x01
-      rom[4] <= 15'b100000100000010;   //      ldl reg1 0x02
-      rom[5] <= 15'b000100000100000;   //      add reg0 reg1
-      rom[6] <= 15'b100000000000010;   // SUB: ldl reg0 0x02
-      rom[7] <= 15'b100000100000001;   //      ldl reg1 0x01
-      rom[8] <= 15'b001000000100000;   //      sub reg0 reg1
-      rom[9] <= 15'b100000000000011;   // AND: ldl reg0 0x03
-      rom[10] <= 15'b100000100000001;  //      ldl reg1 0x01
-      rom[11] <= 15'b001100000100000;  //      and reg0 reg1
-      rom[12] <= 15'b100000000000001;  // OR:  ldl reg0 0x01
-      rom[13] <= 15'b100000100000010;  //      ldl reg1 0x02
-      rom[14] <= 15'b010000000100000;  //      or  reg0 reg1
-      rom[15] <= 15'b100000000000001;  // SL:  ldl reg0 0x01
-      rom[16] <= 15'b010100000000000;  //      sl
-      rom[17] <= 15'b100000011111111;  // SR:  ldl reg0 0xff
-      rom[18] <= 15'b100100011111111;  //      ldh reg0 0xff
-      rom[19] <= 15'b011000000000000;  //      sr
-      rom[20] <= 15'b100000011111111;  // SRA: ldl reg0 0xff
-      rom[21] <= 15'b100100010000000;  //      ldh reg0 0x80
-      rom[22] <= 15'b011100000000000;  //      sra
-      rom[23] <= 15'b100000011111111;  //      ldl reg0 0xff
-      rom[24] <= 15'b100100000000000;  //      ldh reg0 0x00
-      rom[25] <= 15'b011100000000000;  //      sra
-      rom[26] <= 15'b100000000000001;  // CMP: ldl reg0 0x01
-      rom[27] <= 15'b100000100000001;  //      ldl reg1 0x01
-      rom[28] <= 15'b101000000100000;  //      cmp reg0 reg1
-      rom[29] <= 15'b100000000000001;  //      ldl reg0 0x01
-      rom[30] <= 15'b100000100000010;  //      ldl reg1 0x02
-      rom[31] <= 15'b101000000100000;  //      cmp reg0 reg1
-      rom[32] <= 15'b100000000000001;  // JE:  ldl reg0 0x01
-      rom[33] <= 15'b100000100000001;  //      ldl reg1 0x01
-      rom[34] <= 15'b101000000100000;  //      cmp reg0 reg1
-      rom[35] <= 15'b101100000100101;  //      je  0x25
-      rom[36] <= 15'b000000000000000;  //      mov reg0 reg0
-      rom[37] <= 15'b100000000000001;  //      ldl reg0 0x01
-      rom[38] <= 15'b100000100000010;  //      ldl reg1 0x02
-      rom[39] <= 15'b101000000100000;  //      cmp reg0 reg1
-      rom[40] <= 15'b101100000000000;  //      je  0x00
-      rom[41] <= 15'b110000000101011;  // JMP: jmp 0x2b
-      rom[42] <= 15'b000000000000000;  //      mov reg0 reg0
-      rom[43] <= 15'b100000000000001;  // ST:  ldl reg0 0x01
-      rom[44] <= 15'b100000100000000;  //      ldl reg1 0x00
-      rom[45] <= 15'b111000000000000;  //      st  reg0 0x00
-      rom[46] <= 15'b110100100000000;  // LD:  ld  reg1 0x00
-      rom[47] <= 15'b100000000000001;  // SEG: ldl reg0 0x01
-      rom[48] <= 15'b111000011110000;  //      st  reg0 0xf0
-      rom[49] <= 15'b100000000000010;  //      ldl reg0 0x02
-      rom[50] <= 15'b111000011110001;  //      st  reg0 0xf1
-      rom[51] <= 15'b100000000000011;  //      ldl reg0 0x03
-      rom[52] <= 15'b111000011110010;  //      st  reg0 0xf2
-      rom[53] <= 15'b100000000000100;  //      ldl reg0 0x04
-      rom[54] <= 15'b111000011110011;  //      st  reg0 0xf3
-      rom[55] <= 15'b100000000000101;  //      ldl reg0 0x05
-      rom[56] <= 15'b111000011110100;  //      st  reg0 0xf4
-      rom[57] <= 15'b100000000000110;  //      ldl reg0 0x06
-      rom[58] <= 15'b111000011110101;  //      st  reg0 0xf5
-      rom[59] <= 15'b111100000000000;  // HLT: hlt
-      for ( i=60; i<256; i++ )
-        rom[i] <= 0;
-      // RAM
-      for ( i=0; i<256; i++ )
-        ram[i] <= 0;
-   end
 
 endmodule
